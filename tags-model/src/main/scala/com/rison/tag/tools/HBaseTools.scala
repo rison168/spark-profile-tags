@@ -8,7 +8,6 @@ import org.apache.hadoop.hbase.protobuf.ProtobufUtil
 import org.apache.hadoop.hbase.util.{Base64, Bytes}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import org.apache.spark.{SPARK_BRANCH, SparkContext}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 /**

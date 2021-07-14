@@ -141,3 +141,50 @@ ORDER BY `level` ASC, `id` ASC
 
 ![image-20210713184715787](pic/image-20210713184715787.png)
 
+### 标签模型：职业标签
+
+在标签管理平台新建对应的标签（业务标签和属性标签），编写标签模型类，实现标签计算。
+
+~~~mysql
+`job` varchar(60) DEFAULT NULL COMMENT '职业；1学生、2公务员、3军人、4警察、5教
+师、6白领'
+-- SQL 语句
+SELECT job, COUNT(1) AS cnt FROM tags_dat.tbl_users GROUP BY job ;
+~~~
+
+![image-20210714083802046](pic/image-20210714083802046.png)
+
+**新建标签**
+
+新建业务（4级）标签：职业标签，相关字段信息如下：
+
+~~~shell
+标签名称：职业
+标签分类：电商-某商城-人口属性
+更新周期：
+业务含义：注册用户的职业
+标签规则：
+inType=hbase
+zkHosts=bigdata-cdh01.itcast.cn
+zkPort=2181
+hbaseTable=tbl_tag_users
+family=detail
+selectFieldNames=id,job
+程序入口：
+cn.itcast.tags.models.rule.JobModel
+算法名称：
+MATCH
+算法引擎：
+tags-model_2.11.jar
+模型参数：
+--driver-memory 512m --executor-memory 512m --num-executors 1 --
+executor-cores 1
+~~~
+
+新建属性（5级）标签：1 学生、 2 公务员、3 军人、4 警察、5 教师、6 白领，相关字段信息
+
+**模型开发**
+
+在标签管理平台web新建标签，（业务标签4级标签和属性标签5级标签），参考用户性别标签模型修改其中标签的计算部分，使用UDF函数，完成标签匹配计算。
+
+![image-20210714084300367](pic/image-20210714084300367.png)
