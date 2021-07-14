@@ -24,7 +24,7 @@ object JobModel extends Logging {
     325 警察 4
     326 教师 5
     327 白领 6
-*/
+ */
   def main(args: Array[String]): Unit = {
     //创建SparkSession实例对象
     val spark: SparkSession = {
@@ -162,7 +162,6 @@ object JobModel extends Logging {
 
     //应用结束，关闭资源
     spark.stop()
-
 
   }
 }
