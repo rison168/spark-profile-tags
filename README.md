@@ -250,5 +250,59 @@ executor-cores 1
 标签规则：3
 ~~~
 
+### 标签模型：国籍
+
+新建业务标签（4级）： 国籍，相关字段信息如下：
+
+~~~shell
+标签名称：国籍
+标签分类：电商-某商城-人口属性
+更新周期：
+业务含义：注册用户所属的国籍：中国大陆、中国香港、中国澳门、中国台湾、其他
+标签规则：
+inType=hbase
+zkHosts=bigdata-cdh01.itcast.cn
+zkPort=2181
+hbaseTable=tbl_tag_users
+family=detail
+selectFieldNames=id,nationality
+程序入口：
+cn.itcast.tags.models.rule.NationalityModel
+算法名称：
+MATCH
+算法引擎：
+tags-model_2.11.jar
+模型参数：
+--driver-memory 512m --executor-memory 512m --num-executors 1 --
+executor-cores 1
+~~~
+
+新建属性（5级）标签：1中国大陆、2中国香港、3中国澳门、4中国台湾、5其他，相关字段信息如下：
+
+~~~shell
+1）、属性值【中国大陆】
+标签名称：中国大陆
+标签含义：国籍是中国大陆
+标签规则：1
+2）、属性值【中国香港】
+标签名称：中国香港
+标签含义：国籍是中国香港
+标签规则：2
+3）、属性值【中国澳门】
+标签名称：中国澳门
+标签含义：国籍是中国澳门
+标签规则：3
+4）、属性值【中国台湾】
+标签名称：中国台湾
+标签含义：国籍是中国台湾
+标签规则：4
+5）、属性值【其他】
+标签名称：其他
+标签含义：国籍是其他
+标签规则：5
+~~~
+
+
+
 
 
