@@ -1,4 +1,4 @@
-### 标签模型： 用户性别标签
+### 标签模型：用户性别标签
 
 > 向以规则匹配中性别标签为例，开发整个标签模型，熟悉开发过程，对标签的构建整体认识，如下为管理平台首先需要新建标签
 
@@ -196,3 +196,59 @@ executor-cores 1
 当维度表（小表）和事实表（大表）进行join操作时，为了避免shuffle,可以将大小有限的维度表（小表）的全部数据分发到每个节点上，供事实表使用。executor存储维度表的全部数据，一定程度牺牲了空间，换取了shuffle操作大量耗时，这个在sparkSql称作BroadCast join.
 
 ![image-20210724203203317](pic/image-20210724203203317.png)
+
+### 标签模型：政治面貌
+
+在标签管理平台新建对应的标签（业务标签和属性标签），编写标签模型类，继承标签模型基类BasticModel,实现其中标签的计算方法dotTag.
+
+~~~sql
+`politicalFace` int(1) unsigned DEFAULT NULL COMMENT '政治面貌：1群众、2党员、3
+无党派人士'
+~~~
+
+**新建标签**
+
+新建业务（4级）标签：政治面貌，相关字段如下：
+
+~~~shell
+标签名称：政治面貌
+标签分类：电商-某商城-人口属性
+更新周期：
+业务含义：注册用户的政治面貌
+标签规则：
+inType=hbase
+zkHosts=bigdata-cdh01.itcast.cn
+zkPort=2181
+hbaseTable=tbl_tag_users
+family=detail
+selectFieldNames=id,politicalface
+程序入口：
+cn.itcast.tags.models.rule.PoliticalModel
+算法名称：
+MATCH
+算法引擎：
+tags-model_2.11.jar
+模型参数：
+--driver-memory 512m --executor-memory 512m --num-executors 1 --
+executor-cores 1
+~~~
+
+新建属性（5级）标签：1 群众、2党员、3无党派人士，相关字段信息如下：
+
+~~~shell
+1）、属性值【群众】
+标签名称：群众
+标签含义：政治面貌为群众
+标签规则：1
+2）、属性值【党员】
+标签名称：党员
+标签含义：政治面貌为党员
+标签规则：2
+3）、属性值【无党派人士】
+标签名称：无党派人士
+标签含义：政治面貌为无党派人士
+标签规则：3
+~~~
+
+
+
