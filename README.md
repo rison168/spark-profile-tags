@@ -346,3 +346,84 @@ executor-cores 1
 
 ​      ![image-20210725192212534](pic/image-20210725192212534.png)
 
+### 自定义外部数据源
+
+在标签模型编码中，需要从HBase表读写数据，编写HBaseTools工具类，其中提供read和write方法，传递参数读写表的数据，但是能否实现类似SparkSQL读写MySql数据库表数据时如下格式：
+
+~~~scala
+// load：加载数据
+val jdbcDF = spark.read
+.format("jdbc") // 指定数据源
+.option("driver", "com.mysql.jdbc.Driver") // 参数
+.option("url", "jdbc:postgresql:dbserver")
+.option("dbtable", "schema.tablename")
+.option("user", "username")
+.option("password", "password")
+.load() // 加载数据
+// save: 保存数据
+jdbcDF.write
+.format("jdbc") // 指定数据源
+.option("driver", "com.mysql.jdbc.Driver") // 参数
+.option("url", "jdbc:postgresql:dbserver")
+.option("dbtable", "schema.tablename")
+.option("user", "username")
+.option("password", "password")
+.save() // 保存数据
+~~~
+
+**External DataSource**
+
+自从Spark1.3发布，Spark SQL 开始正式支持外部数据源。Spark SQL 开放了一系列接入外部数据源的接口，来让开发者可以实现，接口在org.apache.spark.sql.source包下：
+
+interfaces.scala 。
+
+[在线文档]: https://github.com/apache/spark/blob/branch-2.2/sql/core/src/main/scala/org/apache/spark/sql/sources/interfaces.scala
+
+![image-20210726185011727](pic/image-20210726185011727.png)
+
+主要两个类：**BaseRelation** 和 **RelationProvider**
+
+如果实现一个外部数据源，比如hbase数据源，支持Spark SQL  操作 HBase 数据库。那么就必须定义HBaseRelation来继承BaseRelation，同时也要定义DefaultSource实现一个RelationProvider。
+
+1） BaseRelation
+
+代表了一个抽象的数据源；
+
+该数据源有一行行有着已知schema的数据组成（关系表）
+
+展示了从DataFrame中产生的底层数据源的关系或者表
+
+定义如何产生schema信息
+
+~~~scala
+package org.apache.spark.sql.sources
+@org.apache.spark.annotation.InterfaceStability.Stable
+abstract class BaseRelation() extends scala.AnyRef {
+  def sqlContext : org.apache.spark.sql.SQLContext
+  def schema : org.apache.spark.sql.types.StructType
+  def sizeInBytes : scala.Long = { /* compiled code */ }
+  def needConversion : scala.Boolean = { /* compiled code */ }
+  def unhandledFilters(filters : scala.Array[org.apache.spark.sql.sources.Filter]) : scala.Array[org.apache.spark.sql.sources.Filter] = { /* compiled code */ }
+}
+
+~~~
+
+从外部数据源加载（读取）数据和保存（写入）数据时，提供不同接口实现，具体如下：
+
+* 加载数据接口
+* 
+
+2）RelationProvider
+
+顾明思义，根据用户提供的参数（parameters）返回一个数据源（BaseRelation）一个Relation的提供者，创建BaseRelation。
+
+下图表示从SparkSQL提供外部数据源（External dataSource）加载数据时，需要继承的类说明如下：
+
+![image-20210726190231970](pic/image-20210726190231970.png)
+
+![image-20210726191001111](pic/image-20210726191001111.png)
+
+**自定义HBaseRelation**
+
+自定义HBaseRelation类，继承BaseRelation、TableScan 和 InsertableRelation,此外实现序列化接口Serializable,所有类声明如下，其中实现Serialzable接口为了保证对象可以被序列化和反序列化。
+
