@@ -1,14 +1,14 @@
 package com.rison.tag.spark.hbase
 
 import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
-import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider}
+import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, DataSourceRegister, RelationProvider}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 
 /**
  * @author : Rison 2021/7/27 下午8:01
  *   自定义外部数据源HBase，提供BaseRelation对象，用于加载数据和保存数据
  */
-class DefaultSource extends RelationProvider with CreatableRelationProvider with Serializable {
+class DefaultSource extends RelationProvider with CreatableRelationProvider with DataSourceRegister with Serializable {
   /**
    * 参数信息
    */
@@ -48,4 +48,10 @@ class DefaultSource extends RelationProvider with CreatableRelationProvider with
     //返回对象
     relation
   }
+
+  /**
+   * 数据源使用简短名称
+   * @return
+   */
+  override def shortName(): String = "hbase"
 }
