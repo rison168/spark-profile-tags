@@ -1,6 +1,7 @@
 package com.rison.tag.meta
 
 import cn.hutool.core.util.StrUtil
+import com.rison.tag.utils.DateUtils
 
 /**
  * @author : Rison 2021/7/13 下午4:55
@@ -12,13 +13,15 @@ import cn.hutool.core.util.StrUtil
  *         hbaseTable=tbl_tag_users
  *         family=detail
  *         selectFieldNames=id,gender
+ *         whereCondition=modified#day#30
  */
 case class HBaseMeta(
                       zkHosts: String,
                       zkPort: String,
                       hbaseTable: String,
                       family: String,
-                      selectFieldNames: String
+                      selectFieldNames: String,
+                      filterConditions: String
                     )
 
 object HBaseMata {
@@ -37,12 +40,36 @@ object HBaseMata {
         }
       }
     )
+    //优化加入条件过滤
+    val whereCondition: String = ruleMap.getOrElse("whereCondition", null)
+    //解析条件字段的值，构建where clause 语句
+    /**
+     * whereCondition=modified#day#30
+     * whereCondition=modified#month#6
+     * whereCondition=modified#year#1
+     */
+    var conditionStr: String = null
+    if (null != whereCondition) {
+      val Array(field, unit, amount) = whereCondition.split("#")
+      //获取昨日日期
+      val nowDate: String = DateUtils.getNow(DateUtils.SHORT_DATE_FORMAT)
+      val yesterdayDate: String = DateUtils.dateCalculate(nowDate, -1)
+      //依据传递的单位unit,获取最早日期时间
+      val agoDate: String = unit match {
+        case "day" => DateUtils.dateCalculate(yesterdayDate, -amount.toInt)
+        case "month" => DateUtils.dateCalculate(yesterdayDate, -(amount.toInt * 30))
+        case "year" => DateUtils.dateCalculate(yesterdayDate, -(amount.toInt * 365))
+      }
+      conditionStr = s"$field[GE]$agoDate, $field[LE]$yesterdayDate"
+    }
+
     HBaseMeta(
       ruleMap("zkHosts"),
       ruleMap("zkPort"),
       ruleMap("hbaseTable"),
       ruleMap("family"),
-      ruleMap("selectFieldNames")
+      ruleMap("selectFieldNames"),
+      conditionStr
     )
   }
 }
