@@ -2,6 +2,7 @@ package com.rison.tag.spark.hbase
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.client.{Put, Result, Scan}
+import org.apache.hadoop.hbase.filter.{FilterList, SingleColumnValueFilter}
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.{TableInputFormat, TableOutputFormat}
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil
@@ -27,21 +28,25 @@ class HBaseRelation(context: SQLContext, params: Map[String, String], userSchema
   val SPERATOR: String = ","
   val HBASE_TABLE_SELECT_FIELDS: String = "selectFields"
   val HBASE_TABLE_ROWKEY_NAME: String = "rowKeyColumn"
+  val HBASE_TABLE_FILTER_CONDITIONS: String = "filterConditions"
 
   /**
    * SQLContext 实例对象
+   *
    * @return
    */
   override def sqlContext: SQLContext = context
 
   /**
    * DataFrame 的 schema 信息
+   *
    * @return
    */
   override def schema: StructType = userSchema
 
   /**
    * 如何从HBase表中读取数据，返回RDD[Row]
+   *
    * @return
    */
   override def buildScan(): RDD[Row] = {
@@ -61,6 +66,32 @@ class HBaseRelation(context: SQLContext, params: Map[String, String], userSchema
     fields.foreach(
       field => scan.addColumn(familyBytes, Bytes.toBytes(field))
     )
+
+    //优化 添加过滤条件格式为：modified[GE]20190601,modified[LE]20191201
+    val filterConditions: String = params.getOrElse(HBASE_TABLE_FILTER_CONDITIONS, null)
+    if (null != filterConditions && filterConditions.length > 0) {
+      //构建FilterList对象
+      val filterList = new FilterList()
+      //依据条件语句创建Filter对象
+      filterConditions.split(SPERATOR).foreach {
+        filterCondition =>
+          //解析Filter clause
+          val condition: Condition = Condition.parseCondition(filterCondition)
+          //创建SingleColumnValueFilter对象
+          val filter = new SingleColumnValueFilter(
+            familyBytes, //列簇
+            Bytes.toBytes(condition.field), //列名
+            condition.compare, //比较操作符
+            Bytes.toBytes(condition.value) // 比较值
+          )
+          //将过滤的列加入到选择的列中
+          scan.addColumn(familyBytes, Bytes.toBytes(condition.field))
+          //添加到FilterList
+          filterList.addFilter(filter)
+      }
+      scan.setFilter(filterList)
+    }
+
     //设置scan过滤
     conf.set(
       TableInputFormat.SCAN,
@@ -90,7 +121,8 @@ class HBaseRelation(context: SQLContext, params: Map[String, String], userSchema
 
   /**
    * 将数据【dataFrame】保存到Hbase中
-   * @param data 数据集
+   *
+   * @param data      数据集
    * @param overwrite 保存模式
    */
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
