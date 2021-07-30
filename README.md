@@ -783,3 +783,210 @@ DateDiff(end.expr, start.expr)
 def current_timestamp(): Column = withExpr { CurrentTimestamp() }
 ~~~
 
+### 标签模型： 支付方式
+
+> 用户的支付方式有很多种，比如支付宝、微信、货到付款、银联等等，需要知道用户最常用的支付方式，以便于了解用户最常用的支付平台。
+
+在标签管理平台新建对应的标签（业务标签和属性标签），编写标签模型类，继承标签模型基类AbstactModel,实现其中标签的计算方法doTag.
+
+**业务字段调研**
+
+在mysql数据中，查看业务数据【订单表 tbl_tag_orders】中支付相关字段【paymentCode/paymentName】,编写sql看看有那些值，便于标签开发。
+
+~~~mysql
+-- 查看MySQL数据库中订单表tags_dat.tbl_tag_orders
+SELECT paymentCode, paymentName from tags_dat.tbl_tag_orders limit 10 ;
+/*
++-------------+-------------+
+| paymentCode | paymentName |
++-------------+-------------+
+| alipay | 支付宝 |
+| alipay | 支付宝 |
+| alipay | 支付宝 |
+| cod | 货到付款 |
+| cod | 货到付款 |
+| alipay | 支付宝 |
+| alipay | 支付宝 |
+| alipay | 支付宝 |
+| alipay | 支付宝 |
+| alipay | 支付宝 |
++-------------+-------------+
+*/
+-- 查看支付编码和支付名称
+SELECT paymentCode, paymentName, COUNT(1) AS cnt from
+tags_dat.tbl_tag_orders GROUP BY paymentCode, paymentName;
+/*
++-------------+-------------+-------+
+| paymentCode | paymentName | cnt |
++-------------+-------------+-------+
+| alipay | 支付宝 | 96425 |
+| chinapay | 银联支付 | 4068 |
+| cod | 货到付款 | 16832 |
+| wxpay | 微信支付 | 2800 |
++-------------+-------------+-------+
+*/
+-- SELECT paymentCode, paymentName, COUNT(1) AS cnt from
+tags_dat.tbl_orders GROUP BY paymentCode, paymentName;
+-- 查看支付方式
+SELECT paymentCode, COUNT(1) AS cnt from tags_dat.tbl_tag_orders GROUP BY
+paymentCode;
+/*
++-------------+-------+
+| paymentCode | cnt |
++-------------+-------+
+| alipay | 96425 |
+| chinapay | 4068 |
+| cod | 16832 |
+| wxpay | 2800 |
++-------------+-------+
+*/
+-- SELECT paymentCode, COUNT(1) AS cnt from tags_dat.tbl_orders GROUP BY
+paymentCode;
+~~~
+
+**新建业务标签**
+
+新建业务标签（4级）标签：支付方式标签，相关字段信息如下：
+
+~~~scala
+标签名称：支付方式
+标签分类：电商-某商城-商业属性
+更新周期：1天
+业务含义：用户订单的支付方式：支付宝、微信支付、银联支付、货到付款
+标签规则：
+inType=hbase
+zkHosts=bigdata-cdh01.itcast.cn
+zkPort=2181
+hbaseTable=tbl_tag_orders
+family=detail
+selectFieldNames=memberid,paymentcode
+程序入口：
+cn.itcast.tags.models.statistics.PayTypeModel
+算法名称：
+STATISTICS
+算法引擎：
+tags-model_2.11.jar
+模型参数：
+--driver-memory 512m --executor-memory 512m --num-executors 1 --
+executor-cores 1
+~~~
+
+**新建属性标签**
+
+新建属性标签（5级）标签：支付宝，微信支付、银联支付、货到付款、相关字段信息如下：
+
+~~~scala
+1）、属性值【支付宝】
+标签名称：支付宝
+标签含义：喜欢用支付宝付款
+标签规则：alipay
+2）、属性值【微信支付】
+标签名称：微信支付
+标签含义：喜欢用微信付款
+标签规则：wxpay
+3）、属性值【银联支付】
+标签名称：银联支付
+标签含义：喜欢用银联付款
+标签规则：chinapay
+4）、属性值【货到付款】
+标签名称：货到付款
+标签含义：喜欢货到付款
+标签规则：cod
+~~~
+
+属性标签插入【tal_basic_tag】:
+
+~~~mysql
+INSERT INTO `tbl_basic_tag` VALUES ('356', '支付方式', null,
+'inType=hbase\nzkHosts=bigdatacdh01.itcast.cn\nzkPort=2181\nhbaseTable=tbl_tag_orders\nfamily=detail\nsele
+ctFieldNames=memberid,paymentcode', null, '4', '315', '2019-12-20 17:26:23',
+'2019-12-20 17:26:23', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('357', '支付宝', null, 'alipay', null,
+'5', '356', '2019-12-20 17:26:50', '2019-12-20 17:26:50', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('358', '微信支付', null, 'wxpay', null,
+'5', '356', '2019-12-20 17:27:04', '2019-12-20 17:27:04', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('359', '银联支付', null, 'chinapay',
+null, '5', '356', '2019-12-20 17:27:17', '2019-12-20 17:27:17', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('360', '货到付款', null, 'cod', null,
+'5', '356', '2019-12-20 17:27:32', '2019-12-20 17:27:32', null, null);
+INSERT INTO `tbl_model` VALUES ('9', '356', 'Statistics',
+'cn.itcast.tags.models.statistics.PayTypeModel', 'hdfs://bigdatacdh01.itcast.cn:8020/apps/temp/jars/cbcbe36a-2808-47e2-b476-
+bec0b319c6c3.jar', '1,2019-12-20 08:00:00,2029-12-20 08:00:00', '2019-12-20
+17:26:23', '2019-12-20 17:26:23', '4', '--driver-memory 512m --executormemory 512m --num-executors 1 --executor-cores 1');
+~~~
+
+**标签模型开发**
+
+继承基类AbstactModel，实现标签计算方法doTag,涉及到订单表数据中字段值：
+
+~~~python
+10 column=detail:memberid, timestamp=1574240145469, value=13823431
+10 column=detail:paymentcode, timestamp=1574240145469, value=alipay
+~~~
+
+DataSet/DataFrame中添加列函数withColumn，如果列存在就替换值，不存在创建新列：
+
+~~~python
+/**
+* Returns a new Dataset by adding a column or replacing the existing
+column
+* that has the same name.
+*
+* @group untypedrel
+* @since 2.0.0
+*/
+def withColumn(colName: String, col: Column): DataFrame
+~~~
+
+在DSL编程中窗口函数成都窗口设置使用window类，封装如下：
+
+~~~scala
+val window = Window
+.partitionBy($"") // 分区字段设置
+.orderBy($"".asc, $"".desc) // 排序字段及规则设置
+val window = Window
+.distributeBy($"") // 分区字段设置
+.orderBy($"".asc, $"".desc) // 排序字段及规则设置
+~~~
+
+**开窗函数使用**
+
+* sql实现
+
+  ~~~mysql
+  spark.sql(
+  """
+  |WITH tmp AS (
+  |SELECT
+  | *,
+  | ROW_NUMBER() OVER(PARTITION BY deptno ORDER BY sal DESC)
+  AS rnk
+  |FROM
+  | view_tmp_emp
+  |)
+  |SELECT
+  | t.empno, t.ename, t.sal, t.deptno
+  |FROM tmp t
+  |WHERE t.rnk = 1
+  |""".stripMargin)
+  .show()
+  ~~~
+
+* DSL编程实现
+
+  ~~~scala
+  empDF
+  // 使用函数，增加一列
+  withColumn(
+  "rnk", //
+  row_number().over(
+  Window.partitionBy($"deptno").orderBy($"sal".desc)
+  )
+  )
+  // 获取rnk=1
+  .where($"rnk" === 1)
+  .select($"empno", $"ename", $"sal", $"deptno")
+  .show()
+  ~~~
+
+  
