@@ -642,3 +642,144 @@ def between(lowerBound: Any, upperBound: Any): Column = {
 }
 ~~~
 
+### 标签模型：消费周期
+
+> 消费周期 主要是获取用户在平台的最近消费时间，比如用户最后一次的消费时间是最近一周还是一个月，方便获取到长时间未消费的用户。
+
+在标签管理平台新建对应的标签（业务标签、属性标签），编写标签模型类，继承标签模型基类AbstactModel，实现其中标签计算的方法doTag，业务字段为finishtime,订单完成时间。
+
+~~~mysql
+select memberId,finshTime From tags_dat.tbl_tag_orders limit 5;
+~~~
+
+![image-20210730090549904](pic/image-20210730090549904.png)
+
+**新建业务标签**
+
+新建业务标签（4级）标签：消费周期标签，相关字段信息如下：
+
+~~~shell
+标签名称：消费周期
+标签分类：电商-某商城-商业属性
+更新周期：7天
+业务含义：用户的消费周期：7日、2周、1月、2月、3月、4月、5月、6月
+标签规则：
+inType=hbase
+zkHosts=bigdata-cdh01.itcast.cn
+zkPort=2181
+hbaseTable=tbl_tag_orders
+family=detail
+selectFieldNames=memberid,finishtime
+程序入口：
+cn.itcast.tags.models.statistics.ConsumeCycleModel
+算法名称：
+STATISTICS
+算法引擎：
+tags-model_2.11.jar
+模型参数：
+--driver-memory 512m --executor-memory 512m --num-executors 1 --
+executor-cores 1
+~~~
+
+**新建属性（5级）标签**
+
+新建属性标签：7日，2周，1月，2月，3月，4月，5月，6月，相关字段信息如下：
+
+~~~python
+1）、属性值【近7天】
+标签名称：近7天
+标签含义：消费周期是近7日
+标签规则：0-7
+2）、属性值【近2周】
+标签名称：近2周
+标签含义：消费周期是近2周
+标签规则：8-14
+3）、属性值【近1月】
+标签名称：近1月
+标签含义：消费周期是近1月
+标签规则：15-30
+4）、属性值【近2月】
+标签名称：近2月
+标签含义：消费周期是近60天
+标签规则：31-60
+5）、属性值【近3月】
+标签名称：近3月
+标签含义：消费周期是近90天
+标签规则：61-90
+6）、属性值【近4月】
+标签名称：近4月
+标签含义：消费周期是近120天
+标签规则：91-120
+7）、属性值【近5月】
+标签名称：近5月
+标签含义：消费周期是近150天
+标签规则：121-150
+8）、属性值【近半年】
+标签名称：近半年
+标签含义：消费周期是近半年
+标签规则：151-180
+~~~
+
+属性标签数据插入【tbl_basic_tag】
+
+~~~MYSQL
+INSERT INTO `tbl_basic_tag` VALUES ('347', '消费周期', null,
+'inType=hbase\nzkHosts=bigdatacdh01.itcast.cn\nzkPort=2181\nhbaseTable=tbl_tag_orders\nfamily=detail\nsel
+ectFieldNames=memberid,finishtime', null, '4', '315', '2019-12-20
+17:16:24', '2019-12-20 17:16:24', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('348', '近7天', null, '0-7', null, '5',
+'347', '2019-12-20 17:17:17', '2019-12-20 17:17:17', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('349', '近2周', null, '8-14', null,
+'5', '347', '2019-12-20 17:17:44', '2019-12-20 17:17:44', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('350', '近1月', null, '15-30', null,
+'5', '347', '2019-12-20 17:17:55', '2019-12-20 17:17:55', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('351', '近2月', null, '31-60', null,
+'5', '347', '2019-12-20 17:18:11', '2019-12-20 17:18:11', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('352', '近3月', null, '61-90', null,
+'5', '347', '2019-12-20 17:18:23', '2019-12-20 17:18:23', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('353', '近4月', null, '91-120', null,
+'5', '347', '2019-12-20 17:18:33', '2019-12-20 17:18:33', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('354', '近5月', null, '121-150', null,
+'5', '347', '2019-12-20 17:18:47', '2019-12-20 17:18:47', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('355', '近半年', null, '151-180', null,
+'5', '347', '2019-12-20 17:18:47', '2019-12-20 17:18:47', null, null);
+INSERT INTO `tbl_model` VALUES ('8', '347', 'Statistics',
+'cn.itcast.tags.models.statistics.ConsumeCycleModel', 'hdfs://bigdatacdh01.itcast.cn:8020/apps/temp/jars/ea4b2ff8-455d-44c1-9c41-
+8c256c0f5730.jar', '2,2019-12-20 08:00:00,2029-12-20 08:00:00', '2019-12-20
+17:16:24', '2019-12-20 17:16:24', '4', '--driver-memory 512m --executormemory 512m --num-executors 1 --executor-cores 1');
+~~~
+
+**業務思路分析**
+
+~~~scala
+1）、获取每个会员最近一个订单完成时间
+按照memberid分组，获取finishtime最大值，使用max函数
+2）、转换订单完成时间数据格式
+1589817600 转换为日期格式（yyyy-MM-dd HH:mm:ss），使用from_unixtime函数
+def from_unixtime(ut: Column): Column = withExpr {
+FromUnixTime(ut.expr, Literal("yyyy-MM-dd HH:mm:ss"))
+}
+def from_unixtime(ut: Column, f: String): Column = withExpr {
+FromUnixTime(ut.expr, Literal(f))
+}
+3）、计算当前日期与订单完成期相差天数
+使用函数：datediff
+/**
+* Returns the number of days from `start` to `end`.
+* @group datetime_funcs
+* @since 1.5.0
+*/
+def datediff(end: Column, start: Column): Column = withExpr {
+DateDiff(end.expr, start.expr)
+}
+4）、获取当前时间
+使用函数：current_timestamp()、current_date()
+/**
+* Returns the current timestamp as a timestamp column.
+*
+* @group datetime_funcs
+* @since 1.5.0
+*/
+def current_timestamp(): Column = withExpr { CurrentTimestamp() }
+~~~
+
