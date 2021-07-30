@@ -445,3 +445,200 @@ abstract class BaseRelation() extends scala.AnyRef {
 "( )"：标记一个子表达式的开始和结束位置
 ```
 
+
+
+### 标签模型：年龄段
+
+统计型标签，在人口属性（用户特征）和商业属性（消费特征）的标签中大部分是规则匹配类型标签和统计型标签，选取3个统计类型标签开发模型：年龄段标签、消费周期标签和支付方式标签。
+
+![image-20210729141907248](pic/image-20210729141907248.png)
+
+**统计型标签**
+
+统计型标签是需要使用聚合函数计算后得到标签，比如最近3个月的退单率，用户最常用的支付方式等等，主要开发三个统计类型标签：
+
+~~~scala
+1）、标签：年龄段
+标签属性：50后、60后、70后、80后、90后、00后、10后、20后
+数据来源：注册会员表
+2）、标签：消费周期
+标签属性：7日、2周、1月、2月、3月、4月、5月、6月
+据来源：订单表
+3）、标签：支付方式
+标签属性：支付宝、微信、储蓄卡、信用卡
+据来源：订单表
+~~~
+
+**统计类型标签与规则匹配类型标签区别**
+
+~~~python
+# 规则匹配型标签，按照字段关联
+  依据业务字段的值，获取对应的标签值（tagName）
+  基本上不涉及计算
+# 统计类型标签，需要对业务的数据计算，在获取对应标签值（tagName）
+  例如： count/max/min,在....之间，大于、小于等等
+~~~
+
+在构建用户画像时，其中用户年龄段非常重要，无论是数据表表分析，还是精准营销与个性推荐，往往需要依据用户的年龄段进行相关的营销与推荐，如下展示了某母婴社群依据年龄和性别分析报表案例：
+
+![image-20210729171224259](pic/image-20210729171224259.png)
+
+在标签管理平台新建对应的标签（业务标签和属性标签），编写标签模型，继承标签模板基类AbastractModel,实现其中标签计算的方法doTag。
+
+**新建业务标签**
+
+新建 业务（4级）标签 ： 年龄段标签 ，相关字段信息如下
+
+~~~shell
+标签名称：年龄段
+标签分类：电商-某商城-人口属性
+更新周期：
+业务含义：注册用户的年龄段
+标签规则：
+inType=hbase
+zkHosts=bigdata-cdh01.itcast.cn
+zkPort=2181
+hbaseTable=tbl_tag_users
+family=detail
+selectFieldNames=id,birthday
+程序入口：
+cn.itcast.tags.models.statistics.AgeRangeModel
+算法名称：
+STATISTICS
+算法引擎：
+tags-model_2.11.jar
+模型参数：
+--driver-memory 512m --executor-memory 512m --num-executors 1 --
+executor-cores 1
+~~~
+
+
+
+**新建属性标签**
+
+新建属性（5级）标签： 年龄段标签，相关字段信息如下：
+
+~~~python
+1）、属性值【50后】
+标签名称：50后
+标签含义：注册会员出生日期为1950年-1959年区间的
+标签规则：19500101-19591231
+2）、属性值【60后】
+标签名称：60后
+标签含义：注册会员出生日期为1960年-1969年区间的
+标签规则：19600101-19691231
+3）、属性值【70后】
+标签名称：70后
+标签含义：注册会员出生日期为1970年-1979年区间的
+标签规则：19700101-19791231
+4）、属性值【80后】
+标签名称：80后
+标签插入SQL语句：
+标签含义：注册会员出生日期为1980年-1989年区间的
+标签规则：19800101-19891231
+5）、属性值【90后】
+标签名称：90后
+标签含义：注册会员出生日期为1990年-1999年区间的
+标签规则：19900101-19991231
+6）、属性值【00后】
+标签名称：00后
+标签含义：注册会员出生日期为2000年-2009年区间的
+标签规则：20000101-20091231
+7）、属性值【10后】
+标签名称：10后
+标签含义：注册会员出生日期为2010年-2019年区间的
+标签规则：20100101-20191231
+8）、属性值【20后】
+标签名称：20后
+标签含义：注册会员出生日期为2020年-2029年区间的
+标签规则：20200101-20291231
+~~~
+
+标签插入SQL语句：
+
+~~~mysql
+INSERT INTO `tbl_basic_tag` VALUES ('338', '年龄段', null,
+'inType=hbase\nzkHosts=bigdatacdh01.itcast.cn\nzkPort=2181\nhbaseTable=tbl_tag_users\nfamily=detail\nsele
+ctFieldNames=id,birthday', null, '4', '314', '2019-12-20 17:06:48', '2019-
+12-20 17:06:48', null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('339', '50后', null, '19500101-
+19591231', null, '5', '338', '2019-12-20 17:11:23', '2019-12-20 17:11:23',
+null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('340', '60后', null, '19600101-
+19691231', null, '5', '338', '2019-12-20 17:11:38', '2019-12-20 17:11:38',
+null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('341', '70后', null, '19700101-
+19791231', null, '5', '338', '2019-12-20 17:12:54', '2019-12-20 17:12:54',
+null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('342', '80后', null, '19800101-
+19891231', null, '5', '338', '2019-12-20 17:13:08', '2019-12-20 17:13:08',
+null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('343', '90后', null, '19900101-
+19991231', null, '5', '338', '2019-12-20 17:13:22', '2019-12-20 17:13:22',
+null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('344', '00后', null, '20000101-
+20091231', null, '5', '338', '2019-12-20 17:13:38', '2019-12-20 17:13:38',
+null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('345', '10后', null, '20100101-
+20191231', null, '5', '338', '2019-12-20 17:13:54', '2019-12-20 17:13:54',
+null, null);
+INSERT INTO `tbl_basic_tag` VALUES ('346', '20后', null, '20200101-
+20291231', null, '5', '338', '2019-12-20 17:13:54', '2019-12-20 17:13:54',
+null, null);
+INSERT INTO `tbl_model` VALUES ('7', '338', 'Statistics',
+'cn.itcast.tags.models.statistics.AgeRangeModel', 'hdfs://bigdatacdh01.itcast.cn:8020/apps/temp/jars/499e0416-da3d-496c-8a32-
+994109918c17.jar', '0,2019-12-20 08:00:00,2029-12-20 08:00:00', '2019-12-20
+17:06:48', '2019-12-20 17:06:48', '4', '--driver-memory 512m --executormemory 512m --num-executors 1 --executor-cores 1');
+~~~
+
+**标签模型分析**
+
+~~~scala
+/*
+338 国籍
+属性标签数据：
+339 50后 19500101-19591231
+340 60后 19600101-19691231
+341 70后 19700101-19791231
+342 80后 19800101-19891231
+343 90后 19900101-19991231
+344 00后 20000101-20091231
+345 10后 20100101-20191231
+346 20后 20200101-20291231
+业务数据：
+99 column=detail:birthday, value=1982-01-11 -> 19820111
+分析思路：
+比较birthday日期 在 某个年龄段之内，给予标签值（tagName）
+19820111 -> 80后
+实现：JOIN，UDF函数
+*/
+~~~
+
+![image-20210730083201960](pic/image-20210730083201960.png)
+
+使用dataFrame中DSL编程，涉及到两个函数处理，说明如下：
+
+~~~scala
+// 函数：正则替换
+/**
+* Replace all substrings of the specified string value that match regexp
+with rep.
+*
+* @group string_funcs
+* @since 1.5.0
+*/
+def regexp_replace(e: Column, pattern: String, replacement: String):
+Column
+// 函数：在。。。范围之内
+/**
+* True if the current column is between the lower bound and upper bound,
+inclusive.
+*
+* @group java_expr_ops
+* @since 1.4.0
+*/
+def between(lowerBound: Any, upperBound: Any): Column = {
+(this >= lowerBound) && (this <= upperBound)
+}
+~~~
+
