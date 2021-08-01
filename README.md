@@ -1106,5 +1106,75 @@ val window = Window
 
 **Spark ML 机器学习库**
 
-在spark MLlib 机器学习库提供两套算法实现的api:居于RDD API 和 基于DataFrame API.
+在spark MLlib 机器学习库提供两套算法实现的api:基于RDD API 和 基于DataFrame API.
 
+* 分类
+
+  逻辑回归
+
+  贝叶斯
+
+  支持向量机
+
+* 聚类
+
+  k-均值
+
+* 推荐
+
+  交替最小二乘法
+
+* 回归
+
+  线性回归
+
+* 树
+
+  决策树
+
+  随机森林
+
+用户画像标签模型开发中，均使用基于DateFrameAPI 开发算法库。
+
+~~~python
+1）、DataFrame: This ML API uses DataFrame from Spark SQL as an ML dataset,
+which can hold a variety of data types. E.g., a DataFrame could have
+different columns storing text, feature vectors, true labels, and
+predictions.
+# 一种数据结构，来源于SparkSQL中，DataFrame = Dataset[Row]，存储要训练的和测试的
+数据集；
+2）、Transformer: A Transformer is an algorithm which can transform one
+DataFrame into another DataFrame. E.g., an ML model is a Transformer which
+transforms a DataFrame with features into a DataFrame with predictions.
+转换器，一种算法Algorithm，必须实现transform方法。比如：模型Model就是一个转换
+器，将 输入的数据集DataFrame，转换为预测结果的数据集DataFrame；
+3）、Estimator: An Estimator is an algorithm which can be fit on a
+DataFrame to produce a Transformer. E.g., a learning algorithm is an
+Estimator which trains on a DataFrame and produces a model.
+估计器或者模型学习器，将数据集DataFrame转换为一个Transformer，实现 fit() 方法，
+输入一个 DataFrame 并产生一个 Model，即一个 Transformer（转换器）；
+4）、Parameter: All Transformers and Estimators now share a common API for
+specifying parameters.
+参数，无论是转换器Transformer 还是模型学习器Estimator都是一个算法，使用算法的时候
+必然有参数。
+~~~
+
+数据转换为特征features，过程称之为特征工程（特征提取、特征转换、特征选择）
+
+~~~python
+1）、特征转换
+http://spark.apache.org/docs/2.2.0/ml-features.html#featuretransformers
+2）、特征选择
+http://spark.apache.org/docs/2.2.0/ml-features.html#feature-selectors
+3）、特征提取
+主要针对文本数据特征的提取（NLP）
+http://spark.apache.org/docs/2.2.0/ml-features.html#feature-extractors
+在Spark 2.4版本中提供针对图像数据特征的提取
+http://spark.apache.org/docs/2.4.0/ml-datasource
+spark.read
+.format("image")
+.option("dropInvalid", true)
+.load("data/mllib/images/origin/kittens")
+~~~
+
+![image-20210801212800614](pic/image-20210801212800614.png)
