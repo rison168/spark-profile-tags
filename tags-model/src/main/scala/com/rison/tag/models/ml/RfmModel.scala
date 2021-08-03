@@ -1,7 +1,10 @@
 package com.rison.tag.models.ml
 
+import com.rison.tag.config.ModelConfig
 import com.rison.tag.models.{AbstractModel, ModelType}
 import com.rison.tag.tools.TagTools
+import com.rison.tag.utils.HdfsUtils
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.ml.clustering.{KMeans, KMeansModel}
 import org.apache.spark.ml.feature.VectorAssembler
@@ -96,14 +99,15 @@ class RfmModel extends AbstractModel("客户价值RFM模型", ModelType.ML) {
     val featuresDF: DataFrame = rfmFeaturesDF.withColumnRenamed("raw_features", "features")
     featuresDF.persist(StorageLevel.MEMORY_AND_DISK)
 
-    // 5 使用kMeans聚类算法模型训练
-    val kMeansModel: KMeansModel = new KMeans()
-      .setFeaturesCol("features")
-      .setPredictionCol("prediction")
-      .setK(5) // 设置列簇个数 5
-      .setMaxIter(10) //设置最大迭代次数
-      .fit(featuresDF)
-    println(s"WSSSE = ${kMeansModel.computeCost(featuresDF)}")
+    //    // 5 使用kMeans聚类算法模型训练
+    //    val kMeansModel: KMeansModel = new KMeans()
+    //      .setFeaturesCol("features")
+    //      .setPredictionCol("prediction")
+    //      .setK(5) // 设置列簇个数 5
+    //      .setMaxIter(10) //设置最大迭代次数
+    //      .fit(featuresDF)
+    //    println(s"WSSSE = ${kMeansModel.computeCost(featuresDF)}")
+    val kMeansModel = loadModel(featuresDF)
     //6 使用模型预测
     val predictionDF: DataFrame = kMeansModel.transform(featuresDF)
     featuresDF.unpersist()
@@ -146,6 +150,48 @@ class RfmModel extends AbstractModel("客户价值RFM模型", ModelType.ML) {
         index_to_tagName($"prediction").as("rfm")
       )
     modelDF
+  }
+
+  /**
+   * 使用k-Means训练模型
+   *
+   * @param dataframe 数据集
+   * @return KMeanModel 模型
+   */
+  def trainModel(dataframe: DataFrame): KMeansModel = {
+    // 5 使用kMeans聚类算法模型训练
+    val kMeansModel = new KMeans()
+      .setFeaturesCol("features")
+      .setPredictionCol("prediction")
+      .setK(5) //设置列簇个数
+      .setMaxIter(10) //设置最大的迭代次数
+      .fit(dataframe)
+    println(s"WSSSE = ${kMeansModel.computeCost(dataframe)}")
+    kMeansModel
+  }
+
+  /**
+   * 加载模型，如果模型不存在，使用算法训练模型
+   *
+   * @param dataFrame 训练数据集
+   * @return KMeansModel 模型
+   */
+  def loadModel(dataFrame: DataFrame): KMeansModel = {
+    //模型保存路径
+    val modelPath = ModelConfig.MODEL_BASE_PATH + s"/${this.getClass.getSimpleName.stripSuffix("$")}"
+    //获取模型
+    val configuration: Configuration = dataFrame.sparkSession.sparkContext.hadoopConfiguration
+    if (HdfsUtils.exists(configuration, modelPath)) {
+      logWarning(s"正在从【${modelPath}】加载模型")
+      KMeansModel.load(modelPath)
+    } else {
+      //调整参数获取最佳模型
+      logWarning(s"正在训练模型")
+      val model: KMeansModel = trainModel(dataFrame)
+      logWarning(s"正在保存模型")
+      model.save(modelPath)
+      model
+    }
   }
 }
 

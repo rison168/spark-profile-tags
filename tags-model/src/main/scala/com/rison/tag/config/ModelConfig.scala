@@ -70,4 +70,5 @@ object ModelConfig {
   // Spark Application With Hive
   lazy val APP_IS_HIVE: Boolean = config.getBoolean("app.is.hive")
   lazy val APP_HIVE_META_STORE_URL: String = config.getString("app.hive.metastore.uris")
+
 }

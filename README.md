@@ -1487,3 +1487,147 @@ RFM转换为特征features，传入到KMeans算法，训练获取模型KMeansMod
 
 
 
+### 算法模型调优
+
+机器学习中算法模型调优，主要两个方面考虑：特征数据（features） 和 算法超参数（Hyper Parameters）
+
+* 特征数据
+
+  特征值选择、个数
+
+  特征值转换：正则化、标准及归一化
+
+* 算法超参数
+
+  每个算法都有不同的超参数、每个超参数的不同值都会影响最终训练的模型
+
+* 注意
+
+  注意模型的：过拟合overfitting、欠拟合underfitting
+
+算法模型完整开发优化流程图如下：
+
+![image-20210803085100058](pic/image-20210803085100058.png)
+
+其中最重要的就是特征值处理，将会占用80%时间。
+
+**特征归一化**
+
+归一化：将所有特征值都等比地缩小到0-1或者-1到1之间的区间内，目的为了使这些特征都在相同的规模中。
+
+为什么数据要归一化：
+
+~~~SHELL
+以房价预测为案例，房价(y)通常与离市中心距离(x1)、面积(x2)、楼层(x3)有关，设y=ax1+bx2+cx3，那么abc就是我们需要重点解决的参数。但是有个问题，面积一般数值是比较大的，100平甚至更多，而距离一般都是几公里而已，b参数只要一点变化都能对房价产生巨大影响，而a的变化对房价的影响相对就小很多了。显然这会影响最终的准确性，毕竟距离可是个非常大的影响因素啊。 所以, 需要使用特征的归一化, 取值跨度大的特征数据, 我们浓缩一下, 跨度小的括展一下, 使得他们的跨度尽量统一。
+~~~
+
+使用最小最大值归一化MinMaxScaler特征数据，如下：
+
+~~~python
+// TODO：模型调优方式一：特征值归一化，使用最小最大值归一化
+val scalerModel: MinMaxScalerModel = new MinMaxScaler()
+.setInputCol("raw_features")
+.setOutputCol("features")
+.setMin(0.0).setMax(1.0)
+.fit(rfmFeaturesDF)
+val featuresDF: DataFrame = scalerModel.transform(rfmFeaturesDF)
+~~~
+
+MinMaxScaler作用同样是每一列，即每一维特征，将每一维特征线性地映射到指定的区间，通常是【0,1】
+
+**调整超参数**
+
+在SparkMLlib中提供针对模型调优的方法：TrainValidationSplit和CrossValidator，需要准备，数据、算法、评估器，通过网络参数ParamGid封装算法不同参数的不同值。
+
+~~~python
+文档：http://spark.apache.org/docs/2.2.0/ml-tuning.html
+~~~
+
+但是聚类算法KMeans没有提供专门模型评估器 Evaluator （Spark 2.3 之前没有提供），所以自己编写代码完成不同超参数训练模型，获取最佳模型代码，具体如下所示：
+
+~~~scala
+/**
+* 调整算法超参数，获取最佳模型
+* @param dataframe 数据集
+* @return
+*/
+def trainBestModel(dataframe: DataFrame): KMeansModel = {
+// TODO：模型调优方式二：调整算法超参数 -> MaxIter 最大迭代次数, 使用训练验
+证模式完成
+// 1.设置超参数的值
+    val maxIters: Array[Int] = Array(5, 10, 20)
+    // 2.不同超参数的值，训练模型
+    val models: Array[(Double, KMeansModel, Int)] = maxIters.map{
+    maxIter =>
+    // a. 使用KMeans算法应用数据训练模式
+    val kMeans: KMeans = new KMeans()
+    .setFeaturesCol("features")
+    .setPredictionCol("prediction")
+    .setK(5) // 设置聚类的类簇个数
+    .setMaxIter(maxIter)
+    .setSeed(31) // 实际项目中，需要设置值
+    // b. 训练模式
+    val model: KMeansModel = kMeans.fit(dataframe)
+    // c. 模型评估指标WSSSE
+    val ssse = model.computeCost(dataframe)
+    // d. 返回三元组(评估指标, 模型, 超参数的值)
+    (ssse, model, maxIter)
+    }
+    models.foreach(println)
+    // 3.获取最佳模型
+    val (_, bestModel, _) = models.minBy(tuple => tuple._1)
+    // 4.返回最佳模型
+    bestModel
+   }
+~~~
+
+**保存加载模型**
+
+实际开发标签时，挖掘类型标签，往往先开发算法模型，获取最佳模型以后，将模型保存。构建标签时，先加载保存的算法模型（如从HDFS文件系统），再依据算法模型预测获取标签值，依据标签属性打标签。
+
+![image-20210803093548527](pic/image-20210803093548527.png)
+
+在SparkMLlib中每个算法模型都提供保存save和加载load模型方法，如下截图所示：
+
+~~~scala
+/**
+* Trait for classes that provide `MLWriter`.
+*/
+@Since("1.6.0")
+trait MLWritable {
+/**
+* Returns an `MLWriter` instance for this ML instance.
+*/
+@Since("1.6.0")
+def write: MLWriter
+/**
+* Saves this ML instance to the input path, a shortcut of
+`write.save(path)`.
+*/
+@Since("1.6.0")
+@throws[IOException]("If the input path already exists but overwrite is
+not enabled.")
+def save(path: String): Unit = write.save(path)
+}
+* Trait for objects that provide `MLReader`.
+*
+* @tparam T ML instance type
+*/
+@Since("1.6.0")
+trait MLReadable[T] {
+/**
+* Returns an `MLReader` instance for this class.
+*/
+@Since("1.6.0")
+def read: MLReader[T]
+/**
+* Reads an ML instance from the input path, a shortcut of
+`read.load(path)`.
+*
+* @note Implementing classes should override this to be Java-friendly.
+*/
+@Since("1.6.0")
+def load(path: String): T = read.load(path)
+}
+~~~
+
