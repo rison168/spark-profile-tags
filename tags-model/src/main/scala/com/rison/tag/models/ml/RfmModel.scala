@@ -159,15 +159,40 @@ class RfmModel extends AbstractModel("客户价值RFM模型", ModelType.ML) {
    * @return KMeanModel 模型
    */
   def trainModel(dataframe: DataFrame): KMeansModel = {
-    // 5 使用kMeans聚类算法模型训练
-    val kMeansModel = new KMeans()
-      .setFeaturesCol("features")
-      .setPredictionCol("prediction")
-      .setK(5) //设置列簇个数
-      .setMaxIter(10) //设置最大的迭代次数
-      .fit(dataframe)
-    println(s"WSSSE = ${kMeansModel.computeCost(dataframe)}")
-    kMeansModel
+    //    // 5 使用kMeans聚类算法模型训练
+    //    val kMeansModel = new KMeans()
+    //      .setFeaturesCol("features")
+    //      .setPredictionCol("prediction")
+    //      .setK(5) //设置列簇个数
+    //      .setMaxIter(10) //设置最大的迭代次数
+    //      .fit(dataframe)
+    //    println(s"WSSSE = ${kMeansModel.computeCost(dataframe)}")
+    //    kMeansModel
+    // TODO：模型调优方式二：调整算法超参数 -> MaxIter 最大迭代次数, 使用训练验证模式完成
+    // 1.设置超参数的值
+    val maxIters: Array[Int] = Array(5, 10, 20)
+    // 2.不同超参数的值，训练模型
+    val models: Array[(Double, KMeansModel, Int)] = maxIters.map {
+      maxIter =>
+        // a. 使用KMeans算法应用数据训练模式
+        val kMeans: KMeans = new KMeans()
+          .setFeaturesCol("features")
+          .setPredictionCol("prediction")
+          .setK(5) // 设置聚类的类簇个数
+          .setMaxIter(maxIter)
+          .setSeed(31) // 实际项目中，需要设置值
+        // b. 训练模式
+        val model: KMeansModel = kMeans.fit(dataframe)
+        // c. 模型评估指标WSSSE
+        val ssse = model.computeCost(dataframe)
+        // d. 返回三元组(评估指标, 模型, 超参数的值)
+        (ssse, model, maxIter)
+    }
+    models.foreach(println)
+    // 3.获取最佳模型
+    val (_, bestModel, _) = models.minBy(tuple => tuple._1)
+    // 4.返回最佳模型
+    bestModel
   }
 
   /**
