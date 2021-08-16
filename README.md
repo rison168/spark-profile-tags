@@ -1803,3 +1803,51 @@ F：≥400=5分，300-399=4分，200-299=3分，100-199=2分，≤99=1分
 E：≥250=5分，200-249=4分，150-199=3分，149-50=2分，≤49=1分
 ~~~
 
+### 用户购物性别模型：USG
+
+**新建标签**
+
+新建业务（4级）标签：
+
+~~~mysql
+标签名称：用户购物性别
+标签分类：电商-某商城-商业属性
+更新周期：1周
+业务含义：用户购物性别分为男、女及中性（未知）
+标签规则：
+inType=hbase
+zkHosts=bigdata-cdh01.itcast.cn
+zkPort=2181
+hbaseTable=tbl_tag_goods
+family=detail
+selectFieldNames=cordersn,ogcolor,producttype
+程序入口：
+cn.itcast.tags.models.ml.UsgModel
+算法名称：
+DecisionTree
+算法引擎：
+tags-model_2.11.jar
+模型参数：
+--driver-memory 512m --executor-memory 512m --num-executors 1 --
+executor-cores 1
+~~~
+
+新建属性标签（5级）标签，相关字段如下：
+
+~~~mysql
+1）、属性值【男】
+标签名称：男
+标签含义：用户购物性别为男
+标签规则：0
+2）、属性值【女】
+标签名称：女
+标签含义：用户购物性别为女
+标签规则：1
+3）、属性值【中性】
+标签名称：中性
+标签含义：用户购物性别未知，可能是男，可能是女
+标签规则：-1
+~~~
+
+
+
