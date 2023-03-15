@@ -86,6 +86,8 @@ object GenderModel extends Logging {
       .head()
       .getAs[String]("rule")
 
+    //inType=hbase\nzkHosts=bigdata�cdh01.itcast.cn\nzkPort=2181\nhbaseTable=tbl_tag_users\nfamily=detail\nselec
+    //tFieldNames=id,gender
     logInfo(s"=== 业务标签规则 ： {$tagRule}")
 
     //解析标签规则，先按照换行 \n 符号分割，再按等号分割
@@ -123,7 +125,7 @@ object GenderModel extends Logging {
         hbaseMeta.selectFieldNames.split(",").toSeq
       )
     } else {
-      new RuntimeException("业务标签未提供数据源信息，获取不到业务数据，无法计算标签")
+      throw  new RuntimeException("业务标签未提供数据源信息，获取不到业务数据，无法计算标签")
     }
     businessDF.printSchema()
     businessDF.show(20, false)
@@ -136,7 +138,9 @@ object GenderModel extends Logging {
       .select($"rule", $"name")
     //DataFrame关联，依据属性标签规则rule与业务数据字段gender
     val modeDF: DataFrame = businessDF.join(
-      attrTagRuleDF, businessDF("gender") === attrTagRuleDF("rule")
+      attrTagRuleDF,
+      businessDF("gender") === attrTagRuleDF("rule"),
+      "left" //使用左连接,避免用户性别字段值为空时，inner join 会舍弃该用户
     )
       .select(
         $"id".as("userId"),
