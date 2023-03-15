@@ -112,21 +112,26 @@ object HBaseTools {
     //2 设置读写HBase表的名称
     config.set(TableOutputFormat.OUTPUT_TABLE, table)
     //3 数据转换
+    //df示例 select(
+    //        $"id".as("userId"),
+    //        $"name".as("gender")
+    //      )
     val columns: Array[String] = dataframe.columns
     val putsRDD: RDD[(ImmutableBytesWritable, Put)] = dataframe.rdd
       .map {
         row =>
           //获取rowKey
-          val rowKey: String = row.getAs[String](rowKeyColumn)
+          val rowKey: String = row.getAs[String](rowKeyColumn) //将指定列转换为指定数据类型 rowKeyColumn=》userId
           //构建Put对象
           val put = new Put(Bytes.toBytes(rowKey))
           //将每列数据加入到Put对象中
           val familyBytes: Array[Byte] = Bytes.toBytes(family)
           columns.foreach {
             column =>
+              // put.addColumn(Bytes.toBytes(familyName), Bytes.toBytes("列名"), Bytes.toBytes("值"));
               put.addColumn(
                 familyBytes,
-                Bytes.toBytes(column),
+                Bytes.toBytes(column), //为每个属性创建一列
                 Bytes.toBytes(row.getAs[String](column))
               )
           }
