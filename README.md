@@ -45,7 +45,7 @@ PRIMARY KEY (`id`)
 
 -- 1、基础标签tbl_basic_tag
 INSERT INTO `tbl_basic_tag` VALUES ('318', '性别', null,
-'inType=hbase\nzkHosts=bigdatacdh01.itcast.cn\nzkPort=2181\nhbaseTable=tbl_tag_users\nfamily=detail\nselec
+'inType=hbase\nzkHosts=bigdatacdh01.rison.cn\nzkPort=2181\nhbaseTable=tbl_tag_users\nfamily=detail\nselec
 tFieldNames=id,gender', null, '4', '314', '2019-12-03 11:11:54', '2019-12-03
 11:11:54', null, null);
 INSERT INTO `tbl_basic_tag` VALUES ('319', '男', null, '1', null, '5',
@@ -55,7 +55,7 @@ INSERT INTO `tbl_basic_tag` VALUES ('320', '女', null, '2', null, '5',
 
 -- 2、模型表tbl_model
 INSERT INTO `tbl_model` VALUES ('1', '318', 'MATCH',
-'cn.itcast.tags.models.rule.GenderModel', 'hdfs://bigdatacdh01.itcast.cn:8020/apps/temp/jars/9f0d015b-8535-4538-8722-
+'cn.rison.tags.models.rule.GenderModel', 'hdfs://bigdatacdh01.rison.cn:8020/apps/temp/jars/9f0d015b-8535-4538-8722-
 1d9a331069d1.jar', '4,2019-12-03 10:00:00,2029-12-03 10:00:00', '2019-12-03
 11:11:54', '2019-12-03 11:11:54', '4', '--driver-memory 512m --executormemory 512m --num-executors 1 --executor-cores 1');
 ~~~
@@ -69,13 +69,13 @@ INSERT INTO `tbl_model` VALUES ('1', '318', 'MATCH',
 业务含义：注册会员的性别
 标签规则：
 inType=hbase
-zkHosts=bigdata-cdh01.itcast.cn
+zkHosts=bigdata.rison.cn
 zkPort=2181
 hbaseTable=tbl_tag_users
 family=detail
 selectFieldNames=id,gender
 程序入口：
-cn.itcast.tags.models.rule.GenderModel
+cn.rison.tags.models.rule.GenderModel
 算法名称：
 MATCH
 算法引擎：
@@ -167,13 +167,13 @@ SELECT job, COUNT(1) AS cnt FROM tags_dat.tbl_users GROUP BY job ;
 业务含义：注册用户的职业
 标签规则：
 inType=hbase
-zkHosts=bigdata-cdh01.itcast.cn
+zkHosts=bigdata.rison.cn
 zkPort=2181
 hbaseTable=tbl_tag_users
 family=detail
 selectFieldNames=id,job
 程序入口：
-cn.itcast.tags.models.rule.JobModel
+cn.rison.tags.models.rule.JobModel
 算法名称：
 MATCH
 算法引擎：
@@ -219,13 +219,13 @@ executor-cores 1
 业务含义：注册用户的政治面貌
 标签规则：
 inType=hbase
-zkHosts=bigdata-cdh01.itcast.cn
+zkHosts=bigdata.rison.cn
 zkPort=2181
 hbaseTable=tbl_tag_users
 family=detail
 selectFieldNames=id,politicalface
 程序入口：
-cn.itcast.tags.models.rule.PoliticalModel
+cn.rison.tags.models.rule.PoliticalModel
 算法名称：
 MATCH
 算法引擎：
@@ -263,13 +263,13 @@ executor-cores 1
 业务含义：注册用户所属的国籍：中国大陆、中国香港、中国澳门、中国台湾、其他
 标签规则：
 inType=hbase
-zkHosts=bigdata-cdh01.itcast.cn
+zkHosts=bigdata.rison.cn
 zkPort=2181
 hbaseTable=tbl_tag_users
 family=detail
 selectFieldNames=id,nationality
 程序入口：
-cn.itcast.tags.models.rule.NationalityModel
+cn.rison.tags.models.rule.NationalityModel
 算法名称：
 MATCH
 算法引擎：
@@ -498,13 +498,13 @@ abstract class BaseRelation() extends scala.AnyRef {
 业务含义：注册用户的年龄段
 标签规则：
 inType=hbase
-zkHosts=bigdata-cdh01.itcast.cn
+zkHosts=bigdata.rison.cn
 zkPort=2181
 hbaseTable=tbl_tag_users
 family=detail
 selectFieldNames=id,birthday
 程序入口：
-cn.itcast.tags.models.statistics.AgeRangeModel
+cn.rison.tags.models.statistics.AgeRangeModel
 算法名称：
 STATISTICS
 算法引擎：
@@ -560,7 +560,7 @@ executor-cores 1
 
 ~~~mysql
 INSERT INTO `tbl_basic_tag` VALUES ('338', '年龄段', null,
-'inType=hbase\nzkHosts=bigdatacdh01.itcast.cn\nzkPort=2181\nhbaseTable=tbl_tag_users\nfamily=detail\nsele
+'inType=hbase\nzkHosts=bigdatacdh01.rison.cn\nzkPort=2181\nhbaseTable=tbl_tag_users\nfamily=detail\nsele
 ctFieldNames=id,birthday', null, '4', '314', '2019-12-20 17:06:48', '2019-
 12-20 17:06:48', null, null);
 INSERT INTO `tbl_basic_tag` VALUES ('339', '50后', null, '19500101-
@@ -588,7 +588,7 @@ INSERT INTO `tbl_basic_tag` VALUES ('346', '20后', null, '20200101-
 20291231', null, '5', '338', '2019-12-20 17:13:54', '2019-12-20 17:13:54',
 null, null);
 INSERT INTO `tbl_model` VALUES ('7', '338', 'Statistics',
-'cn.itcast.tags.models.statistics.AgeRangeModel', 'hdfs://bigdatacdh01.itcast.cn:8020/apps/temp/jars/499e0416-da3d-496c-8a32-
+'cn.rison.tags.models.statistics.AgeRangeModel', 'hdfs://bigdatacdh01.rison.cn:8020/apps/temp/jars/499e0416-da3d-496c-8a32-
 994109918c17.jar', '0,2019-12-20 08:00:00,2029-12-20 08:00:00', '2019-12-20
 17:06:48', '2019-12-20 17:06:48', '4', '--driver-memory 512m --executormemory 512m --num-executors 1 --executor-cores 1');
 ~~~
@@ -667,13 +667,13 @@ select memberId,finshTime From tags_dat.tbl_tag_orders limit 5;
 业务含义：用户的消费周期：7日、2周、1月、2月、3月、4月、5月、6月
 标签规则：
 inType=hbase
-zkHosts=bigdata-cdh01.itcast.cn
+zkHosts=bigdata.rison.cn
 zkPort=2181
 hbaseTable=tbl_tag_orders
 family=detail
 selectFieldNames=memberid,finishtime
 程序入口：
-cn.itcast.tags.models.statistics.ConsumeCycleModel
+cn.rison.tags.models.statistics.ConsumeCycleModel
 算法名称：
 STATISTICS
 算法引擎：
@@ -726,7 +726,7 @@ executor-cores 1
 
 ~~~MYSQL
 INSERT INTO `tbl_basic_tag` VALUES ('347', '消费周期', null,
-'inType=hbase\nzkHosts=bigdatacdh01.itcast.cn\nzkPort=2181\nhbaseTable=tbl_tag_orders\nfamily=detail\nsel
+'inType=hbase\nzkHosts=bigdatacdh01.rison.cn\nzkPort=2181\nhbaseTable=tbl_tag_orders\nfamily=detail\nsel
 ectFieldNames=memberid,finishtime', null, '4', '315', '2019-12-20
 17:16:24', '2019-12-20 17:16:24', null, null);
 INSERT INTO `tbl_basic_tag` VALUES ('348', '近7天', null, '0-7', null, '5',
@@ -746,7 +746,7 @@ INSERT INTO `tbl_basic_tag` VALUES ('354', '近5月', null, '121-150', null,
 INSERT INTO `tbl_basic_tag` VALUES ('355', '近半年', null, '151-180', null,
 '5', '347', '2019-12-20 17:18:47', '2019-12-20 17:18:47', null, null);
 INSERT INTO `tbl_model` VALUES ('8', '347', 'Statistics',
-'cn.itcast.tags.models.statistics.ConsumeCycleModel', 'hdfs://bigdatacdh01.itcast.cn:8020/apps/temp/jars/ea4b2ff8-455d-44c1-9c41-
+'cn.rison.tags.models.statistics.ConsumeCycleModel', 'hdfs://bigdatacdh01.rison.cn:8020/apps/temp/jars/ea4b2ff8-455d-44c1-9c41-
 8c256c0f5730.jar', '2,2019-12-20 08:00:00,2029-12-20 08:00:00', '2019-12-20
 17:16:24', '2019-12-20 17:16:24', '4', '--driver-memory 512m --executormemory 512m --num-executors 1 --executor-cores 1');
 ~~~
@@ -857,13 +857,13 @@ paymentCode;
 业务含义：用户订单的支付方式：支付宝、微信支付、银联支付、货到付款
 标签规则：
 inType=hbase
-zkHosts=bigdata-cdh01.itcast.cn
+zkHosts=bigdata.rison.cn
 zkPort=2181
 hbaseTable=tbl_tag_orders
 family=detail
 selectFieldNames=memberid,paymentcode
 程序入口：
-cn.itcast.tags.models.statistics.PayTypeModel
+cn.rison.tags.models.statistics.PayTypeModel
 算法名称：
 STATISTICS
 算法引擎：
@@ -900,7 +900,7 @@ executor-cores 1
 
 ~~~mysql
 INSERT INTO `tbl_basic_tag` VALUES ('356', '支付方式', null,
-'inType=hbase\nzkHosts=bigdatacdh01.itcast.cn\nzkPort=2181\nhbaseTable=tbl_tag_orders\nfamily=detail\nsele
+'inType=hbase\nzkHosts=bigdatacdh01.rison.cn\nzkPort=2181\nhbaseTable=tbl_tag_orders\nfamily=detail\nsele
 ctFieldNames=memberid,paymentcode', null, '4', '315', '2019-12-20 17:26:23',
 '2019-12-20 17:26:23', null, null);
 INSERT INTO `tbl_basic_tag` VALUES ('357', '支付宝', null, 'alipay', null,
@@ -912,7 +912,7 @@ null, '5', '356', '2019-12-20 17:27:17', '2019-12-20 17:27:17', null, null);
 INSERT INTO `tbl_basic_tag` VALUES ('360', '货到付款', null, 'cod', null,
 '5', '356', '2019-12-20 17:27:32', '2019-12-20 17:27:32', null, null);
 INSERT INTO `tbl_model` VALUES ('9', '356', 'Statistics',
-'cn.itcast.tags.models.statistics.PayTypeModel', 'hdfs://bigdatacdh01.itcast.cn:8020/apps/temp/jars/cbcbe36a-2808-47e2-b476-
+'cn.rison.tags.models.statistics.PayTypeModel', 'hdfs://bigdatacdh01.rison.cn:8020/apps/temp/jars/cbcbe36a-2808-47e2-b476-
 bec0b319c6c3.jar', '1,2019-12-20 08:00:00,2029-12-20 08:00:00', '2019-12-20
 17:26:23', '2019-12-20 17:26:23', '4', '--driver-memory 512m --executormemory 512m --num-executors 1 --executor-cores 1');
 ~~~
@@ -1382,13 +1382,13 @@ K 值需要人为设定，不同 K 值得到的结果不一样；
 业务含义：客户价值分为5类（依据产品或业务需求划分）
 标签规则：
 inType=hbase
-zkHosts=bigdata-cdh01.itcast.cn
+zkHosts=bigdata.rison.cn
 zkPort=2181
 hbaseTable=tbl_tag_orders
 family=detail
 selectFieldNames=memberid,ordersn,orderamount,finishtime
 程序入口：
-cn.itcast.tags.models.ml.RfmModel
+cn.rison.tags.models.ml.RfmModel
 算法名称：
 KMEANS
 算法引擎：
@@ -1737,13 +1737,13 @@ RFM模型主要针对用户购买（purchase ）行为分析，RFE模型主要�
 业务含义：用户活跃度分为非常活跃、活跃、不活跃及非常不活跃四类
 标签规则：
 inType=hbase
-zkHosts=bigdata-cdh01.itcast.cn
+zkHosts=bigdata.rison.cn
 zkPort=2181
 hbaseTable=tbl_tag_logs
 family=detail
 selectFieldNames=global_user_id,loc_url,log_time
 程序入口：
-cn.itcast.tags.models.ml.RfeModel
+cn.rison.tags.models.ml.RfeModel
 算法名称：
 KMEANS
 算法引擎：
@@ -1816,13 +1816,13 @@ E：≥250=5分，200-249=4分，150-199=3分，149-50=2分，≤49=1分
 业务含义：用户购物性别分为男、女及中性（未知）
 标签规则：
 inType=hbase
-zkHosts=bigdata-cdh01.itcast.cn
+zkHosts=bigdata.rison.cn
 zkPort=2181
 hbaseTable=tbl_tag_goods
 family=detail
 selectFieldNames=cordersn,ogcolor,producttype
 程序入口：
-cn.itcast.tags.models.ml.UsgModel
+cn.rison.tags.models.ml.UsgModel
 算法名称：
 DecisionTree
 算法引擎：
